@@ -1,9 +1,10 @@
-local QBCore = exports['qb-core']:GetCoreObject()
+ESX = nil
+TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
 
 RegisterNetEvent('md-houserobbery:server:accessbreak', function(tier, item)
     local src = source
-    local Player = QBCore.Functions.GetPlayer(src)
-    local info = Player.PlayerData.charinfo
+    local xPlayer = ESX.GetPlayerFromId(src)
+    local info = xPlayer.getName()
     local luck = math.random(1,100)
     local playerCoords = GetEntityCoords(GetPlayerPed(src))
     if luck <= 20 then 
@@ -25,13 +26,13 @@ RegisterNetEvent('md-houserobberies:server:sellloot', function(itemName)
     end
     if not itemConfig then return end 
     local price = math.random(itemConfig.minvalue, itemConfig.maxvalue) 
-    local itemsell = Player.Functions.GetItemByName(itemName)
+    local itemCount = xPlayer.getInventoryItem(itemName).count
     local playerCoords = GetEntityCoords(GetPlayerPed(src))
-    if itemsell and itemsell.amount > 0 then
-        if RemoveItem(src, itemName, itemsell.amount) then
-            Player.Functions.AddMoney('cash', price * itemsell.amount)
-            Notifys("You received " .. itemsell.amount * price .. " of Cash.", "success")
-            Log('ID: 1 Name: ' .. info.firstname .. ' ' .. info.lastname .. ' Sold  ' .. itemsell.amount .. ' ' .. itemName .. ' For A Price Of ' .. price * itemsell.amount .. ' At ' .. playerCoords .. '!', 'sell')
+    if itemCount > 0 then
+        if xPlayer.removeInventoryItem(itemName, itemCount) then
+            xPlayer.addMoney(price * itemCount)
+            ESX.ShowNotification("You received " .. itemCount * price .. " of Cash.")
+            Log('ID: ' .. src .. ' Name: ' .. info .. ' Sold ' .. itemCount .. ' ' .. itemName .. ' For A Price Of ' .. price * itemCount .. '!', 'sell')
         end
     end
 end)
@@ -100,7 +101,7 @@ RegisterNetEvent('md-houserobbery:server:GetLoot', function(tier, rewardtype, ob
     local randomItem = math.random(1,#Config.Rewards[tier][rewardtype])
     local data = Config.Rewards[tier][rewardtype][randomItem]
     if Config.EmptyChance <= chance then 
-        AddItem(src, data.item, data.amount)
+        xPlayer.addInventoryItem(data.item, data.amount)
         if Config.CashChance <= chance then
             Player.Functions.AddMoney('cash', cashamount)
         end
